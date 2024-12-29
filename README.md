@@ -1,1 +1,1 @@
-# cu5-project
+# Hotel Price Prediction App
