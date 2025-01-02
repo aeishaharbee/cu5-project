@@ -118,34 +118,42 @@ elif page == "Data Visualization":
     col1, col2 = st.columns(2)
 
     with col1:
-        st.subheader("User Average Rating vs Price Per Night")
-        fig1 = px.scatter(df, x='user_average_rating', y='price_per_night', 
-                          labels={'user_average_rating': 'User Average Rating', 
-                                  'price_per_night': 'Price Per Night'})
-        fig1.update_traces(marker_color="#FF4B4B")
-        st.plotly_chart(fig1, use_container_width=True)
-    
-    with col2:
         st.subheader("Hotel Rating vs Price Per Night")
         fig2 = px.scatter(df, x='hotel_rating', y='price_per_night', 
                           labels={'hotel_rating': 'Hotel Rating', 
                                   'price_per_night': 'Price Per Night'})
         fig2.update_traces(marker_color="#FF4B4B")
         st.plotly_chart(fig2, use_container_width=True)
+    
+    with col2:
+        st.subheader("Average Price Per Night: Holiday vs Non-Holiday")
+        average_price_holiday = df.groupby('holiday')['price_per_night'].mean().reset_index()
+        average_price_holiday['holiday'] = average_price_holiday['holiday'].map({0: 'Non-Holiday', 1: 'Holiday'})
+    
+        fig3 = px.bar(
+            average_price_holiday,
+            x='holiday',
+            y='price_per_night',
+            labels={'holiday': 'Holiday Type', 'price_per_night': 'Average Price Per Night'},
+            color='holiday',
+            color_discrete_map={'Non-Holiday': '#A9A9A9', 'Holiday': '#FF4B4B'},
+        )
+        fig3.update_layout(showlegend=False)
+        st.plotly_chart(fig3, use_container_width=True)
 
 # Predict Page
 elif page == "Predict":
     st.markdown('<style>div.block-container{padding-top:1rem;}</style>',unsafe_allow_html=True)
     if "input_data" not in st.session_state:
         st.session_state.input_data = {
-            'accommodation_type': 'Hotel',
+            'accommodation_type': 'Resort',
             'hotel_rating': 4,
-            'user_average_rating': 8.5,
+            'user_average_rating': 5.0,
             'user_comment': 'Good',
             'city': 'Georgetown',
-            'rooms': 1,
-            'guests': 2,
-            'date': datetime.date.today(),
+            'rooms': 2,
+            'guests': 4,
+            'date': datetime.date(2025, 8, 31),
             'balcony_patio': 1, 'gym': 1, 'aircond': 1, 'pool': 1,
             'restaurant': 1, 'non_smoking_room': 1, 'spa': 1, 'kitchen': 1,
             'hotel_bar': 1, 'hairdryer': 1, 'parking': 1, 'tv_ent': 1,
@@ -157,41 +165,22 @@ elif page == "Predict":
     
     # Example data
     example_1 = {
-        'accommodation_type': 'Hotel',
+        'accommodation_type': 'Resort',
         'hotel_rating': 4,
-        'user_average_rating': 8.5,
+        'user_average_rating': 5.0,
         'user_comment': 'Good',
         'city': 'Georgetown',
-        'rooms': 1,
-        'guests': 2,
-        'date': datetime.date(2023, 12, 28),
-        'balcony_patio': 1, 'gym': 1, 'aircond': 1, 'pool': 1,
-        'restaurant': 1, 'non_smoking_room': 1, 'spa': 1, 'kitchen': 1,
-        'hotel_bar': 1, 'hairdryer': 1, 'parking': 1, 'tv_ent': 1,
-        'free_wifi': 1, 'washing_machine': 1,
-    }
-    
-    example_2 = {
-        'accommodation_type': 'Resort',
-        'hotel_rating': 3,
-        'user_average_rating': 7.0,
-        'user_comment': 'Excellent',
-        'city': 'Kuala Lumpur',
         'rooms': 2,
         'guests': 4,
-        'date': datetime.date(2024, 5, 12),
+        'date': datetime.date(2025, 8, 31),
         'balcony_patio': 1, 'gym': 1, 'aircond': 1, 'pool': 1,
         'restaurant': 1, 'non_smoking_room': 1, 'spa': 1, 'kitchen': 1,
         'hotel_bar': 1, 'hairdryer': 1, 'parking': 1, 'tv_ent': 1,
         'free_wifi': 1, 'washing_machine': 1,
     }
     
-    if st.button("Use Example 1"):
+    if st.button("Example"):
         st.session_state.input_data = example_1
-        st.rerun()
-    
-    if st.button("Use Example 2"):
-        st.session_state.input_data = example_2
         st.rerun()
     
     col1, col2, col3 = st.columns(3)
@@ -217,16 +206,14 @@ elif page == "Predict":
         st.session_state.input_data['user_comment'] = st.selectbox(
             "User Comment", ['Excellent', 'Very good', 'Good', 'Okay', 'Fair'], index=['Excellent', 'Very good', 'Good', 'Okay', 'Fair'].index(st.session_state.input_data['user_comment'])
         )
-        st.session_state.input_data['city'] = st.selectbox(
-            "City", ['Kuala Lumpur', 'Malacca', 'Kota Kinabalu', 'Genting Highlands', 'Johor Bahru', 'Ipoh', 'Kuantan', 'Kuching', 'Georgetown', 'Putrajaya'],
-            index=['Kuala Lumpur', 'Malacca', 'Kota Kinabalu', 'Genting Highlands', 'Johor Bahru', 'Ipoh', 'Kuantan', 'Kuching', 'Georgetown', 'Putrajaya'].index(st.session_state.input_data['city'])
-        )
+        
         
     
     with col3:
         st.session_state.input_data['guests'] = st.number_input("Guests", min_value=1, value=st.session_state.input_data['guests'])
-        st.session_state.input_data['user_average_rating'] = st.slider(
-            "User Average Rating (0-10)", 0, 10, int(st.session_state.input_data['user_average_rating']), step=1
+        st.session_state.input_data['city'] = st.selectbox(
+            "City", ['Kuala Lumpur', 'Malacca', 'Kota Kinabalu', 'Genting Highlands', 'Johor Bahru', 'Ipoh', 'Kuantan', 'Kuching', 'Georgetown', 'Putrajaya'],
+            index=['Kuala Lumpur', 'Malacca', 'Kota Kinabalu', 'Genting Highlands', 'Johor Bahru', 'Ipoh', 'Kuantan', 'Kuching', 'Georgetown', 'Putrajaya'].index(st.session_state.input_data['city'])
         )
         
     
